@@ -284,6 +284,7 @@ void SConfig::SaveCoreSettings(IniFile &ini)
 	core->Set("SlippiSpectatorLocalPort", m_spectator_local_port);
 	core->Set("SlippiSaveReplays", m_slippiSaveReplays);
 	core->Set("SlippiEnableQuickChat", m_slippiEnableQuickChat);
+	core->Set("SlippiAnonymizeOpponents", m_slippiAnonymizeOpponents);
 	core->Set("SlippiForceNetplayPort", m_slippiForceNetplayPort);
 	core->Set("SlippiNetplayPort", m_slippiNetplayPort);
 	core->Set("SlippiForceLanIp", m_slippiForceLanIp);
@@ -625,6 +626,7 @@ void SConfig::LoadCoreSettings(IniFile &ini)
 	core->Get("SlippiOnlineDelay", &m_slippiOnlineDelay, 2);
 	core->Get("SlippiSaveReplays", &m_slippiSaveReplays, true);
 	core->Get("SlippiEnableQuickChat", &m_slippiEnableQuickChat, SLIPPI_CHAT_ON);
+	core->Get("SlippiAnonymizeOpponents", &m_slippiAnonymizeOpponents, false);
 	core->Get("SlippiForceNetplayPort", &m_slippiForceNetplayPort, false);
 	core->Get("SlippiNetplayPort", &m_slippiNetplayPort, 2626);
 	core->Get("SlippiForceLanIp", &m_slippiForceLanIp, false);

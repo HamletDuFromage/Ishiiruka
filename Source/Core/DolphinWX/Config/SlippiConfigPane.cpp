@@ -72,6 +72,10 @@ void SlippiNetplayConfigPane::InitializeGUI()
 	m_slippi_enable_quick_chat_choice->SetToolTip(
 	    _("Enable this to send and receive Quick Chat Messages when online."));
 
+	m_slippi_anonymize_opponents_checkbox = new wxCheckBox(this, wxID_ANY, _("Anonymize Opponents Names"));
+	m_slippi_anonymize_opponents_checkbox->SetToolTip(
+	    _("Replace opponents display names by \'Player X\'."));
+
 	m_slippi_force_netplay_port_checkbox = new wxCheckBox(this, wxID_ANY, _("Force Netplay Port"));
 	m_slippi_force_netplay_port_checkbox->SetToolTip(
 	    _("Enable this to force Slippi to use a specific network port for online peer-to-peer connections."));
@@ -123,13 +127,15 @@ void SlippiNetplayConfigPane::InitializeGUI()
 	                           wxALIGN_CENTER_VERTICAL);
 	sSlippiOnlineSettings->Add(m_slippi_enable_quick_chat_choice, wxGBPosition(1, 1), wxDefaultSpan, wxALIGN_LEFT);
 
-	sSlippiOnlineSettings->Add(m_slippi_force_netplay_port_checkbox, wxGBPosition(2, 0), wxDefaultSpan,
+	sSlippiOnlineSettings->Add(m_slippi_anonymize_opponents_checkbox, wxGBPosition(2, 0), wxGBSpan(1, 2));
+
+	sSlippiOnlineSettings->Add(m_slippi_force_netplay_port_checkbox, wxGBPosition(3, 0), wxDefaultSpan,
 	                           wxALIGN_CENTER_VERTICAL);
-	sSlippiOnlineSettings->Add(m_slippi_force_netplay_port_ctrl, wxGBPosition(2, 1), wxDefaultSpan,
+	sSlippiOnlineSettings->Add(m_slippi_force_netplay_port_ctrl, wxGBPosition(3, 1), wxDefaultSpan,
 	                           wxALIGN_LEFT | wxRESERVE_SPACE_EVEN_IF_HIDDEN);
-	sSlippiOnlineSettings->Add(m_slippi_force_netplay_lan_ip_checkbox, wxGBPosition(3, 0), wxDefaultSpan,
+	sSlippiOnlineSettings->Add(m_slippi_force_netplay_lan_ip_checkbox, wxGBPosition(4, 0), wxDefaultSpan,
 	                           wxALIGN_CENTER_VERTICAL);
-	sSlippiOnlineSettings->Add(m_slippi_netplay_lan_ip_ctrl, wxGBPosition(3, 1), wxDefaultSpan,
+	sSlippiOnlineSettings->Add(m_slippi_netplay_lan_ip_ctrl, wxGBPosition(4, 1), wxDefaultSpan,
 	                           wxALIGN_LEFT | wxRESERVE_SPACE_EVEN_IF_HIDDEN);
 
 	wxStaticBoxSizer *const sbSlippiOnlineSettings =
@@ -177,6 +183,7 @@ void SlippiNetplayConfigPane::LoadGUIValues()
 	}
 
 	m_slippi_delay_frames_ctrl->SetValue(startup_params.m_slippiOnlineDelay);
+	m_slippi_anonymize_opponents_checkbox->SetValue(startup_params.m_slippiAnonymizeOpponents);
 	PopulateEnableChatChoiceBox();
 
 	m_slippi_force_netplay_port_checkbox->SetValue(startup_params.m_slippiForceNetplayPort);
@@ -206,6 +213,7 @@ void SlippiNetplayConfigPane::BindEvents()
 
 	m_slippi_delay_frames_ctrl->Bind(wxEVT_SPINCTRL, &SlippiNetplayConfigPane::OnDelayFramesChanged, this);
 	m_slippi_enable_quick_chat_choice->Bind(wxEVT_CHOICE, &SlippiNetplayConfigPane::OnQuickChatChanged, this);
+	m_slippi_anonymize_opponents_checkbox->Bind(wxEVT_CHECKBOX, &SlippiNetplayConfigPane::OnAnonymizeOpponentsChanged, this);
 	m_slippi_force_netplay_port_checkbox->Bind(wxEVT_CHECKBOX, &SlippiNetplayConfigPane::OnForceNetplayPortToggle,
 	                                           this);
 	m_slippi_force_netplay_port_ctrl->Bind(wxEVT_SPINCTRL, &SlippiNetplayConfigPane::OnNetplayPortChanged, this);
@@ -268,6 +276,11 @@ void SlippiNetplayConfigPane::OnReplayDirChanged(wxCommandEvent &event)
 void SlippiNetplayConfigPane::OnDelayFramesChanged(wxCommandEvent &event)
 {
 	SConfig::GetInstance().m_slippiOnlineDelay = m_slippi_delay_frames_ctrl->GetValue();
+}
+
+void SlippiNetplayConfigPane::OnAnonymizeOpponentsChanged(wxCommandEvent &event)
+{
+	SConfig::GetInstance().m_slippiAnonymizeOpponents = m_slippi_anonymize_opponents_checkbox->IsChecked();
 }
 
 void SlippiNetplayConfigPane::OnForceNetplayPortToggle(wxCommandEvent &event)

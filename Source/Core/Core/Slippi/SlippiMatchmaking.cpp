@@ -567,7 +567,12 @@ std::string SlippiMatchmaking::GetPlayerName(u8 port)
 	{
 		return "";
 	}
-	return m_playerInfo[port].displayName;
+	else if (SConfig::GetInstance().m_slippiAnonymizeOpponents && port != m_localPlayerIndex) {
+		return "Player " + std::to_string(port + 1);
+	}
+	else {
+		return m_playerInfo[port].displayName;
+	}
 }
 
 u8 SlippiMatchmaking::RemotePlayerCount()
