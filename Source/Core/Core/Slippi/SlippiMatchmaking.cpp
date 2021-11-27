@@ -567,10 +567,12 @@ std::string SlippiMatchmaking::GetPlayerName(u8 port)
 	{
 		return "";
 	}
-	else if (SConfig::GetInstance().m_slippiAnonymizeOpponents && port != m_localPlayerIndex) {
+	else if (SConfig::GetInstance().m_slippiAnonymizeOpponents && port != m_localPlayerIndex) 
+	{
 		return "Player " + std::to_string(port + 1);
 	}
-	else {
+	else 
+	{
 		return m_playerInfo[port].displayName;
 	}
 }
