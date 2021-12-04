@@ -85,8 +85,7 @@ std::unique_ptr<SlippiNetplayClient> SlippiMatchmaking::GetNetplayClient()
 
 bool SlippiMatchmaking::IsFixedRulesMode(SlippiMatchmaking::OnlinePlayMode mode)
 {
-	return mode == SlippiMatchmaking::OnlinePlayMode::UNRANKED ||
-		mode == SlippiMatchmaking::OnlinePlayMode::RANKED;
+	return mode == SlippiMatchmaking::OnlinePlayMode::UNRANKED || mode == SlippiMatchmaking::OnlinePlayMode::RANKED;
 }
 
 void SlippiMatchmaking::sendMessage(json msg)
@@ -522,12 +521,12 @@ void SlippiMatchmaking::handleMatchmaking()
 			m_allowedStages.push_back(stageId);
 		}
 	}
-	
+
 	if (m_allowedStages.empty())
 	{
 		// Default case, shouldn't ever really be hit but it's here just in case
-		m_allowedStages.push_back(0x3); // Pokemon
-		m_allowedStages.push_back(0x8); // Yoshi's Story
+		m_allowedStages.push_back(0x3);  // Pokemon
+		m_allowedStages.push_back(0x8);  // Yoshi's Story
 		m_allowedStages.push_back(0x1C); // Dream Land
 		m_allowedStages.push_back(0x1F); // Battlefield
 		m_allowedStages.push_back(0x20); // Final Destination
@@ -567,14 +566,12 @@ std::string SlippiMatchmaking::GetPlayerName(u8 port)
 	{
 		return "";
 	}
-	else if (SConfig::GetInstance().m_slippiAnonymizeOpponents && port != m_localPlayerIndex) 
+	else if (IsFixedRulesMode(m_searchSettings.mode) && SConfig::GetInstance().m_slippiAnonymizeOpponents &&
+	         port != m_localPlayerIndex)
 	{
 		return "Player " + std::to_string(port + 1);
 	}
-	else 
-	{
-		return m_playerInfo[port].displayName;
-	}
+	return m_playerInfo[port].displayName;
 }
 
 u8 SlippiMatchmaking::RemotePlayerCount()

@@ -74,7 +74,7 @@ void SlippiNetplayConfigPane::InitializeGUI()
 
 	m_slippi_anonymize_opponents_checkbox = new wxCheckBox(this, wxID_ANY, _("Anonymize Opponents Names"));
 	m_slippi_anonymize_opponents_checkbox->SetToolTip(
-	    _("Replace opponents display names by \'Player X\'."));
+	    _("Replace opponents display names by \'Player [port]\' on Direct and Ranked mode."));
 
 	m_slippi_force_netplay_port_checkbox = new wxCheckBox(this, wxID_ANY, _("Force Netplay Port"));
 	m_slippi_force_netplay_port_checkbox->SetToolTip(
