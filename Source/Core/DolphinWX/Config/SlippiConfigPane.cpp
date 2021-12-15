@@ -76,6 +76,8 @@ void SlippiNetplayConfigPane::InitializeGUI()
 	m_slippi_anonymize_opponents_checkbox->SetToolTip(
 	    _("Replace opponents display names by \'Player [port]\' on Direct and Ranked mode."));
 
+	m_slippi_banlist_button = new wxButton(this, wxID_ANY, _("Character ban list"));
+
 	m_slippi_force_netplay_port_checkbox = new wxCheckBox(this, wxID_ANY, _("Force Netplay Port"));
 	m_slippi_force_netplay_port_checkbox->SetToolTip(
 	    _("Enable this to force Slippi to use a specific network port for online peer-to-peer connections."));
@@ -129,13 +131,15 @@ void SlippiNetplayConfigPane::InitializeGUI()
 
 	sSlippiOnlineSettings->Add(m_slippi_anonymize_opponents_checkbox, wxGBPosition(2, 0), wxGBSpan(1, 2));
 
-	sSlippiOnlineSettings->Add(m_slippi_force_netplay_port_checkbox, wxGBPosition(3, 0), wxDefaultSpan,
+	sSlippiOnlineSettings->Add(m_slippi_banlist_button, wxGBPosition(3, 0), wxGBSpan(1, 2));
+
+	sSlippiOnlineSettings->Add(m_slippi_force_netplay_port_checkbox, wxGBPosition(4, 0), wxDefaultSpan,
 	                           wxALIGN_CENTER_VERTICAL);
-	sSlippiOnlineSettings->Add(m_slippi_force_netplay_port_ctrl, wxGBPosition(3, 1), wxDefaultSpan,
+	sSlippiOnlineSettings->Add(m_slippi_force_netplay_port_ctrl, wxGBPosition(4, 1), wxDefaultSpan,
 	                           wxALIGN_LEFT | wxRESERVE_SPACE_EVEN_IF_HIDDEN);
-	sSlippiOnlineSettings->Add(m_slippi_force_netplay_lan_ip_checkbox, wxGBPosition(4, 0), wxDefaultSpan,
+	sSlippiOnlineSettings->Add(m_slippi_force_netplay_lan_ip_checkbox, wxGBPosition(5, 0), wxDefaultSpan,
 	                           wxALIGN_CENTER_VERTICAL);
-	sSlippiOnlineSettings->Add(m_slippi_netplay_lan_ip_ctrl, wxGBPosition(4, 1), wxDefaultSpan,
+	sSlippiOnlineSettings->Add(m_slippi_netplay_lan_ip_ctrl, wxGBPosition(5, 1), wxDefaultSpan,
 	                           wxALIGN_LEFT | wxRESERVE_SPACE_EVEN_IF_HIDDEN);
 
 	wxStaticBoxSizer *const sbSlippiOnlineSettings =
@@ -214,6 +218,7 @@ void SlippiNetplayConfigPane::BindEvents()
 	m_slippi_delay_frames_ctrl->Bind(wxEVT_SPINCTRL, &SlippiNetplayConfigPane::OnDelayFramesChanged, this);
 	m_slippi_enable_quick_chat_choice->Bind(wxEVT_CHOICE, &SlippiNetplayConfigPane::OnQuickChatChanged, this);
 	m_slippi_anonymize_opponents_checkbox->Bind(wxEVT_CHECKBOX, &SlippiNetplayConfigPane::OnAnonymizeOpponentsChanged, this);
+	m_slippi_banlist_button->Bind(wxEVT_BUTTON, &SlippiNetplayConfigPane::OnBanlistClick, this);
 	m_slippi_force_netplay_port_checkbox->Bind(wxEVT_CHECKBOX, &SlippiNetplayConfigPane::OnForceNetplayPortToggle,
 	                                           this);
 	m_slippi_force_netplay_port_ctrl->Bind(wxEVT_SPINCTRL, &SlippiNetplayConfigPane::OnNetplayPortChanged, this);
@@ -281,6 +286,64 @@ void SlippiNetplayConfigPane::OnDelayFramesChanged(wxCommandEvent &event)
 void SlippiNetplayConfigPane::OnAnonymizeOpponentsChanged(wxCommandEvent &event)
 {
 	SConfig::GetInstance().m_slippiAnonymizeOpponents = m_slippi_anonymize_opponents_checkbox->IsChecked();
+}
+
+void SlippiNetplayConfigPane::OnBanlistClick(wxCommandEvent &event)
+{
+	std::map<u8, std::string> characters = {
+		{0, "Captain Falcon"},
+		{1, "Donkey Kong"},
+		{2, "Fox"},
+		{3, "Game & Watch"},
+		{4, "Kirby"},
+		{5, "Bowser"},
+		{6, "Link"},
+		{7, "Luigi"},
+		{8, "Mario"},
+		{9, "Marth"},
+		{10, "Mewtwo"},
+		{11, "Ness"},
+		{12, "Peach"},
+		{13, "Pikachu"},
+		{14, "Ice Climbers"},
+		{15, "Jigglypuff"},
+		{16, "Samus"},
+		{17, "Yoshi"},
+		{18, "Zelda"},
+		{19, "Sheik"},
+		{20, "Falco"},
+		{21, "Young Link"},
+		{22, "Dr. Mario"},
+		{23, "Roy"},
+		{24, "Pichu"},
+		{25, "Ganondorf"}
+	};
+	
+	const int space1 = FromDIP(1);
+	wxDialog banlistDialog{ this, wxID_ANY, _("Ban characters"), wxDefaultPosition, wxSize(400, 700), wxDD_DEFAULT_STYLE};
+	wxStaticText* m_banlist_desc = new wxStaticText(&banlistDialog, wxID_ANY, _("Select character you don't want to encounter online"));
+
+	wxBoxSizer* const szr = new wxBoxSizer(wxVERTICAL);
+	wxBoxSizer* const padding_szr = new wxBoxSizer(wxVERTICAL);
+	szr->Add(m_banlist_desc, 0, wxEXPAND);
+	szr->AddSpacer(space1);
+	for (u8 i = 0; i < 26; i++) {
+		wxCheckBox* character = new wxCheckBox(&banlistDialog, wxID_ANY, _(characters[i]));
+		character->SetValue((SConfig::GetInstance().m_slippiBanlist & (1 << i)));
+		character->Bind(wxEVT_CHECKBOX, [i, character](wxCommandEvent&) {
+			bool checked = character->IsChecked();
+			SConfig::GetInstance().m_slippiBanlist = (SConfig::GetInstance().m_slippiBanlist & (~(1 << i))) | (checked << i);
+		});
+		szr->Add(character, 1, wxALIGN_CENTER_VERTICAL|wxEXPAND);
+		szr->AddSpacer(space1);
+	}
+	szr->SetMinSize(FromDIP(wxSize(500, -1)));
+	padding_szr->Add(szr, 1, wxALL, 12);
+	
+	SetSizerAndFit(padding_szr, false);
+	Center();
+
+	banlistDialog.ShowModal();
 }
 
 void SlippiNetplayConfigPane::OnForceNetplayPortToggle(wxCommandEvent &event)

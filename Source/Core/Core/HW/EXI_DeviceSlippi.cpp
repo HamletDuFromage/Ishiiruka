@@ -2286,9 +2286,11 @@ void CEXISlippi::prepareOnlineMatchState()
 		auto localCharOk = lps.characterId < 26;
 		auto remoteCharOk = true;
 		INFO_LOG(SLIPPI_ONLINE, "remotePlayerCount: %d", remotePlayerCount);
+		u32 banlist = SConfig::GetInstance().m_slippiBanlist;
 		for (int i = 0; i < remotePlayerCount; i++)
 		{
-			if (rps[i].characterId >= 26)
+			// *ahem*. Fuck Falco.
+			if (rps[i].characterId >= 26 || (banlist & (1 << rps[i].characterId)))
 				remoteCharOk = false;
 		}
 
@@ -2327,6 +2329,7 @@ void CEXISlippi::prepareOnlineMatchState()
 
 			if (!remoteCharOk)
 			{
+				ERROR_LOG(SLIPPI_ONLINE, "Your opponent's character is not allowed");
 				handleConnectionCleanup();
 				prepareOnlineMatchState();
 				return;
