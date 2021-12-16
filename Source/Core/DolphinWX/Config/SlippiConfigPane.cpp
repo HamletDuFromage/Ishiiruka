@@ -318,28 +318,32 @@ void SlippiNetplayConfigPane::OnBanlistClick(wxCommandEvent &event)
 		{24, "Pichu"},
 		{25, "Ganondorf"}
 	};
-	
-	const int space1 = FromDIP(1);
-	wxDialog banlistDialog{ this, wxID_ANY, _("Ban characters"), wxDefaultPosition, wxSize(400, 700), wxDD_DEFAULT_STYLE};
-	wxStaticText* m_banlist_desc = new wxStaticText(&banlistDialog, wxID_ANY, _("Select character you don't want to encounter online"));
 
+	const int space1 = FromDIP(1);
+	wxDialog banlistDialog{ this, wxID_ANY, _("Ban characters"), wxDefaultPosition, wxSize(400, 700), wxDD_DEFAULT_STYLE};	
+	wxStaticText* m_banlist_desc = new wxStaticText(&banlistDialog, wxID_ANY, _("Select characters you don't want to encounter online"));
 	wxBoxSizer* const szr = new wxBoxSizer(wxVERTICAL);
 	wxBoxSizer* const padding_szr = new wxBoxSizer(wxVERTICAL);
+
 	szr->Add(m_banlist_desc, 0, wxEXPAND);
 	szr->AddSpacer(space1);
+
+	u32 banlist = SConfig::GetInstance().m_slippiBanlist;
 	for (u8 i = 0; i < 26; i++) {
 		wxCheckBox* character = new wxCheckBox(&banlistDialog, wxID_ANY, _(characters[i]));
-		character->SetValue((SConfig::GetInstance().m_slippiBanlist & (1 << i)));
-		character->Bind(wxEVT_CHECKBOX, [i, character](wxCommandEvent&) {
-			bool checked = character->IsChecked();
-			SConfig::GetInstance().m_slippiBanlist = (SConfig::GetInstance().m_slippiBanlist & (~(1 << i))) | (checked << i);
+		character->SetValue((banlist & (1 << i)));
+		character->Bind(wxEVT_CHECKBOX, [i, character, banlist](wxCommandEvent&) {
+			if (character->IsChecked())
+				SConfig::GetInstance().m_slippiBanlist |= 1UL << i;
+			else
+				SConfig::GetInstance().m_slippiBanlist &= ~(1UL << i);
 		});
 		szr->Add(character, 1, wxALIGN_CENTER_VERTICAL|wxEXPAND);
 		szr->AddSpacer(space1);
 	}
-	szr->SetMinSize(FromDIP(wxSize(500, -1)));
+	szr->Add(banlistDialog.CreateButtonSizer(wxCLOSE | wxNO_DEFAULT), 0, wxEXPAND | wxBOTTOM, space1);
+	szr->AddSpacer(space1);
 	padding_szr->Add(szr, 1, wxALL, 12);
-	
 	SetSizerAndFit(padding_szr, false);
 	Center();
 
