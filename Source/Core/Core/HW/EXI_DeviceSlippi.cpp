@@ -2436,10 +2436,15 @@ void CEXISlippi::prepareOnlineMatchState()
 		auto localCharOk = lps.characterId < 26;
 		auto remoteCharOk = true;
 		INFO_LOG(SLIPPI_ONLINE, "remotePlayerCount: %d", remotePlayerCount);
+		u32 banlist = SConfig::GetInstance().m_slippiBanlist;
+		u8 bannedCharacter = -1;
 		for (int i = 0; i < remotePlayerCount; i++)
 		{
-			if (rps[i].characterId >= 26)
+			if (rps[i].characterId >= 26 || banlist & (1 << rps[i].characterId))
+			{
 				remoteCharOk = false;
+				bannedCharacter = rps[i].characterId;
+			}
 		}
 
 		// TODO: This is annoying, ideally remotePlayerSelections would just include everyone including the local player
@@ -2478,6 +2483,7 @@ void CEXISlippi::prepareOnlineMatchState()
 			if (!remoteCharOk)
 			{
 				handleConnectionCleanup();
+				forcedError = "Your opponent picked an invalid character or a character you've banned (Character ID: " + std::to_string(bannedCharacter) + ")";
 				prepareOnlineMatchState();
 				return;
 			}
