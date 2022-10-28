@@ -34,6 +34,7 @@ class SlippiNetplayConfigPane final : public wxPanel
 	void OnReplayDirChanged(wxCommandEvent &event);
 	void OnDelayFramesChanged(wxCommandEvent &event);
 	void OnBanlistClick(wxCommandEvent &event);
+	void OnPlayerBlocklistClick(wxCommandEvent &event);
 	void OnForceNetplayPortToggle(wxCommandEvent &event);
 	void OnNetplayPortChanged(wxCommandEvent &event);
 	void OnForceNetplayLanIpToggle(wxCommandEvent &event);
@@ -50,6 +51,7 @@ class SlippiNetplayConfigPane final : public wxPanel
 	wxStaticText *m_slippi_delay_frames_txt;
 	wxSpinCtrl *m_slippi_delay_frames_ctrl;
 	wxButton* m_slippi_banlist_button;
+	wxButton* m_slippi_player_blocklist_button;
 	wxCheckBox *m_slippi_force_netplay_port_checkbox;
 	wxSpinCtrl *m_slippi_force_netplay_port_ctrl;
 	wxCheckBox *m_slippi_force_netplay_lan_ip_checkbox;

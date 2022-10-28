@@ -2140,6 +2140,7 @@ void CEXISlippi::prepareOnlineMatchState()
 		auto matchInfo = slippi_netplay->GetMatchInfo();
 		SlippiPlayerSelections lps = matchInfo->localPlayerSelections;
 		auto rps = matchInfo->remotePlayerSelections;
+		auto codes = matchmaking->GetPlayerInfo();
 
 #ifdef LOCAL_TESTING
 		lps.playerIdx = 0;
@@ -2173,11 +2174,19 @@ void CEXISlippi::prepareOnlineMatchState()
 		// Check if someone is picking dumb characters in non-direct
 		auto localCharOk = lps.characterId < 26;
 		auto remoteCharOk = true;
+		auto remotePlayer = true;
 		INFO_LOG(SLIPPI_ONLINE, "remotePlayerCount: %d", remotePlayerCount);
 		u32 banlist = SConfig::GetInstance().m_slippiBanlist;
-		u8 bannedCharacter = -1;
+		std::string playerBlocklist = SConfig::GetInstance().m_slippiPlayerBlockList;
+		u8 bannedCharacter;
+		std::string blockedPlayer;
 		for (int i = 0; i < remotePlayerCount; i++)
 		{
+			if (playerBlocklist.find(codes[i].connectCode) != std::string::npos)
+			{
+				remotePlayer = false;
+				blockedPlayer = codes[i].connectCode;
+			}
 			if (rps[i].characterId >= 26 || banlist & (1 << rps[i].characterId))
 			{
 				remoteCharOk = false;
@@ -2232,10 +2241,20 @@ void CEXISlippi::prepareOnlineMatchState()
 				return;
 			}
 
+			if (!remotePlayer)
+			{
+				handleConnectionCleanup();
+				forcedError = "You matched against a player you've blocked (" +
+				              blockedPlayer + ")";
+				prepareOnlineMatchState();
+				return;
+			}
+
 			if (!remoteCharOk)
 			{
 				handleConnectionCleanup();
-				forcedError = "Your opponent picked an invalid character or a character you've banned (Character ID: " + std::to_string(bannedCharacter) + ")";
+				forcedError = "Your opponent picked an invalid character or a character you've banned (Character ID: " +
+				              std::to_string(bannedCharacter) + ")";
 				prepareOnlineMatchState();
 				return;
 			}
