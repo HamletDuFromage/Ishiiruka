@@ -74,7 +74,7 @@ void SlippiNetplayConfigPane::InitializeGUI()
 	    _("Enable this to send and receive Quick Chat Messages when online."));
 
 	m_slippi_banlist_button = new wxButton(this, wxID_ANY, _("Character ban list"));
-	m_slippi_player_blocklist_button = new wxButton(this, wxID_ANY, _("Player ban list"));
+	m_slippi_player_blocklist_button = new wxButton(this, wxID_ANY, _("Player block list"));
 
 	m_slippi_force_netplay_port_checkbox = new wxCheckBox(this, wxID_ANY, _("Force Netplay Port"));
 	m_slippi_force_netplay_port_checkbox->SetToolTip(
@@ -273,100 +273,70 @@ void SlippiNetplayConfigPane::OnDelayFramesChanged(wxCommandEvent &event)
 
 void SlippiNetplayConfigPane::OnBanlistClick(wxCommandEvent &event)
 {
-	const std::vector<std::string> characters = {
+	const std::vector<wxString> characters = {
 	    "Captain Falcon", "Donkey Kong", "Fox",   "Game & Watch", "Kirby",    "Bowser", "Link",
 	    "Luigi",          "Mario",       "Marth", "Mewtwo",       "Ness",     "Peach",  "Pikachu",
 	    "Ice Climbers",   "Jigglypuff",  "Samus", "Yoshi",        "Zelda",    "Sheik",  "Falco",
 	    "Young Link",     "Dr. Mario",   "Roy",   "Pichu",        "Ganondorf"};
 
-	const int space1 = FromDIP(1);
-	wxDialog banlistDialog{this, wxID_ANY, _("Ban characters"), wxDefaultPosition, wxDefaultSize, wxDD_DEFAULT_STYLE};
+	const int space10 = FromDIP(10);
+	wxDialog banlistDialog{this, wxID_ANY, _("Ban characters"), wxDefaultPosition, wxSize(400, 500), wxDD_DEFAULT_STYLE};
 	wxStaticText *m_banlist_desc =
 	    new wxStaticText(&banlistDialog, wxID_ANY, _("Select characters you don't want to encounter online"));
 
-	wxBoxSizer *const szr = new wxBoxSizer(wxVERTICAL);
-	wxBoxSizer *const padding_szr = new wxBoxSizer(wxVERTICAL);
-	szr->Add(m_banlist_desc, 0, wxEXPAND);
-	szr->AddSpacer(space1);
-	u32 banlist = SConfig::GetInstance().m_slippiBanlist;
-	for (u8 i = 0; i < characters.size(); i++)
+	wxBoxSizer *const main_layout = new wxBoxSizer(wxVERTICAL);
+	wxBoxSizer *const padding_box = new wxBoxSizer(wxVERTICAL);
+	main_layout->Add(m_banlist_desc, 0, wxEXPAND);
+	main_layout->AddSpacer(space10);
+	m_char_list = new wxCheckListBox(&banlistDialog, wxID_ANY, wxDefaultPosition, wxSize(200, 250));
+	m_char_list->Append(characters);
+	for (u8 i = 0; i < m_char_list->GetCount(); i++)
 	{
-		wxCheckBox *character = new wxCheckBox(&banlistDialog, wxID_ANY, _(characters[i]));
-		character->SetValue((banlist & (1 << i)));
-		character->Bind(wxEVT_CHECKBOX,
-		                [i, character, banlist](wxCommandEvent &)
-		                {
-			                if (character->IsChecked())
-				                SConfig::GetInstance().m_slippiBanlist |= 1UL << i;
-			                else
-				                SConfig::GetInstance().m_slippiBanlist &= ~(1UL << i);
-		                });
-		szr->Add(character, 1, wxALIGN_CENTER_VERTICAL);
+		m_char_list->Check(i, (SConfig::GetInstance().m_slippiBanlist & (1 << i)));
 	}
-	padding_szr->Add(szr, 1, wxALL, 12);
+	m_char_list->Bind(wxEVT_CHECKLISTBOX, &SlippiNetplayConfigPane::OnPlayerBannedCharacterClick, this);
+	main_layout->Add(m_char_list, 1, wxALIGN_CENTER);
 
-	SetSizerAndFit(padding_szr, false);
-	banlistDialog.Fit();
+	padding_box->Add(main_layout, 1, wxALL | wxALIGN_CENTER, 12);
+
+	SetSizerAndFit(padding_box, false);
 	Center();
-
 	banlistDialog.ShowModal();
+}
+
+void SlippiNetplayConfigPane::OnPlayerBannedCharacterClick(wxCommandEvent &event)
+{
+	wxArrayInt checkedItems;
+	m_char_list->GetCheckedItems(checkedItems);
+	SConfig::GetInstance().m_slippiBanlist = 0;
+	for (auto &i : checkedItems)
+	{
+		SConfig::GetInstance().m_slippiBanlist |= 1UL << i;
+	}
 }
 
 void SlippiNetplayConfigPane::OnPlayerBlocklistClick(wxCommandEvent &event)
 {
 	const int space10 = FromDIP(10);
-	wxDialog blocklistDialog{this, wxID_ANY, _("Block players"), wxDefaultPosition, wxDefaultSize, wxDD_DEFAULT_STYLE};
+	wxDialog blocklistDialog{this, wxID_ANY, _("Block players"), wxDefaultPosition, wxSize(400, 300), wxDD_DEFAULT_STYLE};
 	wxBoxSizer *const padding_box = new wxBoxSizer(wxVERTICAL);
 	wxBoxSizer *const main_layout = new wxBoxSizer(wxHORIZONTAL);
 	wxBoxSizer *const button_layout = new wxBoxSizer(wxVERTICAL);
 
-	wxListBox *m_list = new wxListBox(&blocklistDialog, wxID_ANY, wxDefaultPosition, wxSize(200, 250));
-	m_list->SetFocus();
+	m_block_list = new wxListBox(&blocklistDialog, wxID_ANY, wxDefaultPosition, wxSize(200, 250));
+	m_block_list->SetFocus();
 
-	wxTextCtrl *code_input = new wxTextCtrl(&blocklistDialog, wxID_ANY);
+	code_input = new wxTextCtrl(&blocklistDialog, wxID_ANY);
 	code_input->SetHint("CODE#123");
 	wxButton *btn_add_code = new wxButton(&blocklistDialog, wxID_ANY, _("&Add Player Code"));
 	wxButton *btn_delete_code = new wxButton(&blocklistDialog, wxID_ANY, _("&Delete Player Code"));
 
-	m_list->Append(wxSplit(SConfig::GetInstance().m_slippiPlayerBlockList, ';'));
+	m_block_list->Append(wxSplit(SConfig::GetInstance().m_slippiPlayerBlockList, ';'));
 
-	auto save_list = [&]()
-	{
-		SConfig::GetInstance().m_slippiPlayerBlockList = "";
-		for (int i = 0; i < m_list->GetCount(); i++)
-		{
-			SConfig::GetInstance().m_slippiPlayerBlockList += WxStrToStr(m_list->GetString(i)) + ";";
-		}
-		if (m_list->GetCount())
-		{ // Remove the latest ';'
-			SConfig::GetInstance().m_slippiPlayerBlockList.pop_back();
-		}
-	};
+	btn_add_code->Bind(wxEVT_BUTTON, &SlippiNetplayConfigPane::OnBlocklistAddClick, this);
+	btn_delete_code->Bind(wxEVT_BUTTON, &SlippiNetplayConfigPane::OnBlocklistDelClick, this);
 
-	btn_add_code->Bind(wxEVT_BUTTON,
-	                   [&code_input, &m_list, &save_list](wxCommandEvent &)
-	                   {
-		                   wxString code = code_input->GetValue();
-		                   wxArrayString split_code = wxSplit(code, '#');
-		                   if (split_code.GetCount() == 2 && split_code[0].IsWord() && split_code[1].IsNumber())
-		                   // Would be nice to use but Wind*ws won't allow it
-		                   // if (wxRegEx("[A-Z]+#[0-9]+").Matches(code))
-		                   {
-			                   m_list->Append(code.MakeUpper());
-			                   code_input->SetValue("");
-		                   }
-		                   save_list();
-	                   });
-
-	btn_delete_code->Bind(wxEVT_BUTTON,
-	                      [&m_list, &save_list](wxCommandEvent &)
-	                      {
-		                      int idx = m_list->GetSelection();
-		                      m_list->Delete(idx);
-		                      save_list();
-	                      });
-
-	main_layout->Add(m_list, 1);
+	main_layout->Add(m_block_list, 1);
 	main_layout->AddSpacer(space10);
 
 	button_layout->Add(code_input);
@@ -375,12 +345,45 @@ void SlippiNetplayConfigPane::OnPlayerBlocklistClick(wxCommandEvent &event)
 
 	main_layout->Add(button_layout, 1, wxALL);
 
-	padding_box->Add(main_layout, 1, wxALL, 12);
+	padding_box->Add(main_layout, 1, wxALL | wxALIGN_CENTER, 12);
 
 	SetSizerAndFit(padding_box, true);
-	blocklistDialog.Fit();
 	Center();
 	blocklistDialog.ShowModal();
+}
+
+void SlippiNetplayConfigPane::SaveBlockList()
+{
+	SConfig::GetInstance().m_slippiPlayerBlockList = "";
+	for (u8 i = 0; i < m_block_list->GetCount(); i++)
+	{
+		SConfig::GetInstance().m_slippiPlayerBlockList += WxStrToStr(m_block_list->GetString(i)) + ";";
+	}
+	if (m_block_list->GetCount())
+	{ // Remove the latest ';'
+		SConfig::GetInstance().m_slippiPlayerBlockList.pop_back();
+	}
+}
+
+void SlippiNetplayConfigPane::OnBlocklistAddClick(wxCommandEvent &event)
+{
+	wxString code = code_input->GetValue();
+	wxArrayString split_code = wxSplit(code, '#');
+	if (split_code.GetCount() == 2 && split_code[0].IsWord() && split_code[1].IsNumber())
+	// Would be nice to use but Wind*ws won't allow it
+	// if (wxRegEx("[A-Z]+#[0-9]+").Matches(code))
+	{
+		m_block_list->Append(code.MakeUpper());
+		code_input->SetValue("");
+	}
+	SaveBlockList();
+}
+
+void SlippiNetplayConfigPane::OnBlocklistDelClick(wxCommandEvent &event)
+{
+	int idx = m_block_list->GetSelection();
+	m_block_list->Delete(idx);
+	SaveBlockList();
 }
 
 void SlippiNetplayConfigPane::OnForceNetplayPortToggle(wxCommandEvent &event)

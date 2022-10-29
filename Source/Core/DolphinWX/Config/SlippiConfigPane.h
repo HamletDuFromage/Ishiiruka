@@ -7,6 +7,7 @@
 #include <wx/arrstr.h>
 #include <wx/panel.h>
 #include <wx/textctrl.h>
+#include <wx/checklst.h>
 
 enum TEXIDevices : int;
 
@@ -34,7 +35,11 @@ class SlippiNetplayConfigPane final : public wxPanel
 	void OnReplayDirChanged(wxCommandEvent &event);
 	void OnDelayFramesChanged(wxCommandEvent &event);
 	void OnBanlistClick(wxCommandEvent &event);
+	void OnPlayerBannedCharacterClick(wxCommandEvent &event);
 	void OnPlayerBlocklistClick(wxCommandEvent &event);
+	void SaveBlockList();
+	void OnBlocklistAddClick(wxCommandEvent &event);
+	void OnBlocklistDelClick(wxCommandEvent &event);
 	void OnForceNetplayPortToggle(wxCommandEvent &event);
 	void OnNetplayPortChanged(wxCommandEvent &event);
 	void OnForceNetplayLanIpToggle(wxCommandEvent &event);
@@ -50,8 +55,11 @@ class SlippiNetplayConfigPane final : public wxPanel
 	wxCheckBox *m_replay_month_folders_checkbox;
 	wxStaticText *m_slippi_delay_frames_txt;
 	wxSpinCtrl *m_slippi_delay_frames_ctrl;
-	wxButton* m_slippi_banlist_button;
-	wxButton* m_slippi_player_blocklist_button;
+	wxButton *m_slippi_banlist_button;
+	wxCheckListBox *m_char_list;
+	wxButton *m_slippi_player_blocklist_button;
+	wxListBox *m_block_list;
+	wxTextCtrl *code_input;
 	wxCheckBox *m_slippi_force_netplay_port_checkbox;
 	wxSpinCtrl *m_slippi_force_netplay_port_ctrl;
 	wxCheckBox *m_slippi_force_netplay_lan_ip_checkbox;
