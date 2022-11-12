@@ -369,7 +369,7 @@ void SlippiNetplayConfigPane::OnBlocklistAddClick(wxCommandEvent &event)
 {
 	wxString code = code_input->GetValue();
 	wxArrayString split_code = wxSplit(code, '#');
-	if (split_code.GetCount() == 2 && split_code[0].IsWord() && split_code[1].IsNumber())
+	if (code.length() <= 8 && split_code.GetCount() == 2 && split_code[0].IsWord() && split_code[1].IsNumber())
 	// Would be nice to use but Wind*ws won't allow it
 	// if (wxRegEx("[A-Z]+#[0-9]+").Matches(code))
 	{
