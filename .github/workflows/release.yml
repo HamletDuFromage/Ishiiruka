@@ -1,6 +1,7 @@
 name: Upload Latest Artifacts to Release
 
 on:
+  workflow_dispatch:
   release:
     types: [released]
 
