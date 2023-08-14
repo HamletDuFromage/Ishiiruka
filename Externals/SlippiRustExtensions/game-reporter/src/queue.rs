@@ -11,7 +11,7 @@ use serde_json::{json, Value};
 use dolphin_integrations::{Color, Dolphin, Duration as OSDDuration, Log};
 
 use crate::types::{GameReport, GameReportRequestPayload, OnlinePlayMode};
-use crate::ProcessingEvent;
+use crate::{CompletionEvent, ProcessingEvent};
 
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -47,12 +47,10 @@ pub struct GameReporterQueue {
 impl GameReporterQueue {
     /// Initializes and returns a new game reporter.
     pub(crate) fn new() -> Self {
-        // `max_idle_connections` is set to `0` to mimic how the CURL setup in the
-        // C++ version was done - i.e, I don't want to introduce connection pooling
-        // without Fizzi/Nikki opting in to it.
+        // We set `max_idle_connections` to `5` to mimic how CURL was configured in
+        // the old C++ version of this module.
         let http_client = ureq::AgentBuilder::new()
-            //.https_only(true)
-            .max_idle_connections(0)
+            .max_idle_connections(5)
             .user_agent("SlippiGameReporter/Rust v0.1")
             .build();
 
@@ -76,37 +74,6 @@ impl GameReporterQueue {
                 // This should never happen.
                 tracing::error!(target: Log::GameReporter, ?error, "Unable to lock queue, dropping report");
             },
-        }
-    }
-
-    /// Report a completed match.
-    ///
-    /// This doesn't necessarily need to be here, but it's easier to grok the codebase
-    /// if we keep all reporting network calls in one module.
-    pub fn report_completion(&self, uid: String, play_key: String, match_id: String, end_mode: u8) {
-        let mutation = r#"
-            mutation ($report: OnlineGameCompleteInput!) {
-                completeOnlineGame (report: $report)
-            }
-        "#;
-
-        let variables = Some(json!({
-            "report": {
-                "matchId": match_id,
-                "fbUid": uid,
-                "playKey": play_key,
-                "endMode": end_mode,
-            }
-        }));
-
-        let res = execute_graphql_query(&self.http_client, mutation, variables, Some("completeOnlineGame"));
-
-        match res {
-            Ok(value) if value == "true" => {
-                tracing::info!(target: Log::GameReporter, "Successfully executed abandonment request")
-            },
-            Ok(value) => tracing::error!(target: Log::GameReporter, ?value, "Error executing abandonment request",),
-            Err(error) => tracing::error!(target: Log::GameReporter, ?error, "Error executing abandonment request"),
         }
     }
 
@@ -138,6 +105,71 @@ impl GameReporterQueue {
             Ok(value) => tracing::error!(target: Log::GameReporter, ?value, "Error executing abandonment request",),
             Err(error) => tracing::error!(target: Log::GameReporter, ?error, "Error executing abandonment request"),
         }
+    }
+}
+
+pub(crate) fn run_completion(http_client: ureq::Agent, receiver: Receiver<CompletionEvent>) {
+    loop {
+        // Watch for notification to do work
+        match receiver.recv() {
+            Ok(CompletionEvent::ReportAvailable {
+                uid,
+                play_key,
+                match_id,
+                end_mode,
+            }) => {
+                report_completion(&http_client, uid, match_id, play_key, end_mode);
+            },
+
+            Ok(CompletionEvent::Shutdown) => {
+                tracing::info!(target: Log::GameReporter, "Completion thread winding down");
+                break;
+            },
+
+            // This should realistically never happen, since it means the Sender
+            // that's held a level up has been dropped entirely - but we'll log
+            // for the hell of it in case anyone's tweaking the logic.
+            Err(error) => {
+                tracing::error!(
+                    target: Log::GameReporter,
+                    ?error,
+                    "Failed to receive CompletionEvent, thread will exit"
+                );
+
+                break;
+            },
+        }
+    }
+}
+
+/// Report a completed match.
+///
+/// This doesn't necessarily need to be here, but it's easier to grok the codebase
+/// if we keep all reporting network calls in one module.
+pub fn report_completion(http_client: &ureq::Agent, uid: String, match_id: String, play_key: String, end_mode: u8) {
+    let mutation = r#"
+        mutation ($report: OnlineGameCompleteInput!) {
+            completeOnlineGame (report: $report)
+        }
+    "#;
+
+    let variables = Some(json!({
+        "report": {
+            "matchId": match_id,
+            "fbUid": uid,
+            "playKey": play_key,
+            "endMode": end_mode,
+        }
+    }));
+
+    let res = execute_graphql_query(http_client, mutation, variables, Some("completeOnlineGame"));
+
+    match res {
+        Ok(value) if value == "true" => {
+            tracing::info!(target: Log::GameReporter, "Successfully executed completion request")
+        },
+        Ok(value) => tracing::error!(target: Log::GameReporter, ?value, "Error executing completion request",),
+        Err(error) => tracing::error!(target: Log::GameReporter, ?error, "Error executing completion request"),
     }
 }
 
