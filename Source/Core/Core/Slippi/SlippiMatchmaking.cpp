@@ -549,6 +549,13 @@ void SlippiMatchmaking::handleMatchmaking()
 			std::vector<std::string> exIpParts;
 			SplitString(extIp, ':', exIpParts);
 
+			auto displayName = el.value("displayName", "");
+			auto connectCode = el.value("connectCode", "");
+			NOTICE_LOG(SLIPPI_ONLINE, "%s (%s)'s IP: %s",
+						displayName.c_str(),
+						connectCode.c_str(),
+						extIp.c_str());
+
 			auto lanIp = el.value("ipAddressLan", "1.1.1.1:123");
 
 			WARN_LOG(SLIPPI_ONLINE, "LAN IP: %s", lanIp.c_str());
